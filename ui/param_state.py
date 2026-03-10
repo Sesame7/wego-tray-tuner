@@ -6,10 +6,9 @@ from ui.param_schema import FieldSpec, row_count_from_params
 
 
 def _coerce_int(value: Any, default: int) -> int:
-    try:
-        return int(float(value))
-    except Exception:
+    if value is None:
         return int(default)
+    return int(float(value))
 
 
 class ParamState:
@@ -19,11 +18,8 @@ class ParamState:
     def row_count(self) -> int:
         return row_count_from_params(self.params)
 
-    def get_default(self, path: str, default: Any) -> Any:
-        try:
-            return self.get(path)
-        except Exception:
-            return default
+    def get_default(self, path: str, _default: Any) -> Any:
+        return self.get(path)
 
     def get_bool(self, path: str) -> bool:
         return bool(self.get_default(path, False))

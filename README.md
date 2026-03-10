@@ -1,10 +1,10 @@
-# weigao-tray-tuner
+# wego-tray-tuner
 
-Single-image tuning UI for the Weigao tray detector.
+Single-image tuning UI for the Wego tray detector.
 
 ## Purpose
 
-weigao-tray-tuner is the tuning shell for detector logic synced from VisionRuntime.
+wego-tray-tuner is the tuning shell for detector logic synced from VisionRuntime.
 This repo focuses on:
 
 - visual parameter adjustment
@@ -17,10 +17,10 @@ Detector algorithm logic remains in the synced detector files under `detect/`.
 
 Manually copy from VisionRuntime:
 
-- `VisionRuntime/config/detect_weigao_tray.yaml` -> `weigao-tray-tuner/config/detect_weigao_tray.yaml`
-- `VisionRuntime/detect/*` -> `weigao-tray-tuner/detect/*`
-- `VisionRuntime/utils/image_codec.py` -> `weigao-tray-tuner/utils/image_codec.py`
-- optional samples -> `weigao-tray-tuner/data/images/*`
+- `VisionRuntime/config/wego_tray/*.yaml` -> `wego-tray-tuner/config/wego_tray/*.yaml`
+- `VisionRuntime/detect/*` -> `wego-tray-tuner/detect/*`
+- `VisionRuntime/utils/image_codec.py` -> `wego-tray-tuner/utils/image_codec.py`
+- optional samples -> `wego-tray-tuner/data/images/*`
 
 ## Launch
 
@@ -35,23 +35,23 @@ Build a folder-based package (`onedir`):
 
 ```powershell
 pip install pyinstaller
-pyinstaller --noconfirm --clean --windowed --name weigao-tray-tuner main.py
+pyinstaller --noconfirm --clean --windowed --name wego-tray-tuner main.py
 ```
 
-After build, copy the detector default config next to the generated exe:
+After build, copy the detector recipe folder to the generated output:
 
-- source: `config/detect_weigao_tray.yaml`
-- target: `dist/weigao-tray-tuner/detect_weigao_tray.yaml`
+- source: `config/wego_tray/*.yaml`
+- target: `dist/wego-tray-tuner/config/wego_tray/*.yaml`
 
 Run:
 
-- `dist/weigao-tray-tuner/weigao-tray-tuner.exe`
+- `dist/wego-tray-tuner/wego-tray-tuner.exe`
 
 Notes:
 
-- Keep the whole `dist/weigao-tray-tuner/` folder together (do not move only the exe).
-- The packaged app reads/writes `config.yaml` in the same folder as the exe.
-- The packaged app expects `detect_weigao_tray.yaml` in the same folder as the exe.
+- Keep the whole `dist/wego-tray-tuner/` folder together (do not move only the exe).
+- The packaged app reads/writes `config/wego_tray/=@WORKING_+.yaml`.
+- The packaged app expects recipe files under `config/wego_tray/`.
 - `onedir` output includes runtime dependencies under `_internal/` (OpenCV / NumPy / Tk); this is normal.
 
 ## UI Workflow
@@ -61,16 +61,15 @@ Notes:
 3. Click `Detect` to run inspection and update overlay.
 4. Optional: use `Prev/Next` to browse images in the same folder.
 
-After `Detect`, the displayed image is the detector overlay returned by `detect/weigao_tray.py`.
+After `Detect`, the displayed image is the detector overlay returned by `detect/wego_tray.py`.
 
 ## Config Load/Save Behavior
 
 - Load priority:
-  1. `config.yaml` (working config)
-  2. `detect_weigao_tray.yaml` (defaults fallback, packaged app)
-  3. `config/detect_weigao_tray.yaml` (defaults fallback, source repo compatibility)
+  1. `config/wego_tray/=@WORKING_+.yaml` (working config)
+  2. first lexicographically sorted recipe under `config/wego_tray/*.yaml`, excluding `_`-prefixed files and `=@WORKING_+.yaml`
 - Save target after successful `Detect`:
-  - `config.yaml`
+  - `config/wego_tray/=@WORKING_+.yaml`
 - If params were not changed, no file write occurs.
 
 ## Project Layout
@@ -89,7 +88,7 @@ After `Detect`, the displayed image is the detector overlay returned by `detect/
 
 ## Docs
 
-- `docs/app_design.md`: weigao-tray-tuner app design and runtime flow
+- `docs/app_design.md`: wego-tray-tuner app design and runtime flow
 - `docs/detect.md`: detector reference and compatibility constraints
 - `docs/sync_contract.md`: sync contract with VisionRuntime
 - `docs/ui_param_mapping.md`: UI label to detector key mapping

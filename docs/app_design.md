@@ -1,12 +1,12 @@
-# weigao-tray-tuner App Design
+# wego-tray-tuner App Design
 
-This document describes the design of the weigao-tray-tuner app itself.
+This document describes the design of the wego-tray-tuner app itself.
 Detection logic details are intentionally not duplicated here. The canonical
-detection implementation lives in `VisionRuntime/detect/weigao_tray.py`.
+detection implementation lives in `VisionRuntime/detect/wego_tray.py`.
 
 ## Scope
 
-- Single-image tuning UI for the Weigao tray detector.
+- Single-image tuning UI for the Wego tray detector.
 - Local interactive editing of anchors and parameters.
 - Manual detect trigger (`Detect` button or `Ctrl+R`).
 - Overlay-first result review (no separate result table).
@@ -14,9 +14,9 @@ detection implementation lives in `VisionRuntime/detect/weigao_tray.py`.
 ## Canonical Source Policy
 
 - Detector behavior and parameter semantics are sourced from:
-  - `VisionRuntime/detect/weigao_tray.py`
-  - `VisionRuntime/config/detect_weigao_tray.yaml`
-- This repository (`weigao-tray-tuner`) is a tuning shell around that logic.
+  - `VisionRuntime/detect/wego_tray.py`
+  - `VisionRuntime/config/wego_tray/*.yaml`
+- This repository (`wego-tray-tuner`) is a tuning shell around that logic.
 - If docs here conflict with the detector code copied from VisionRuntime, code wins.
 
 ## Runtime Architecture
@@ -52,8 +52,9 @@ detection implementation lives in `VisionRuntime/detect/weigao_tray.py`.
 ## Main State Flow
 
 1. App startup:
-   - Load effective params from `config.yaml` (if present), fallback defaults from
-     `config/detect_weigao_tray.yaml`.
+   - Load effective params from `config/wego_tray/=@WORKING_+.yaml` (if present),
+     fallback to first recipe under `config/wego_tray/*.yaml` after excluding
+     `_`-prefixed files and `=@WORKING_+.yaml`.
 2. Open image:
    - File dialog initial folder: current image folder (if active), else
      `data/images`, else `data`, else app base folder.
@@ -62,9 +63,10 @@ detection implementation lives in `VisionRuntime/detect/weigao_tray.py`.
    - Any parameter commit or anchor drag marks params dirty.
    - Source RGB image is shown while editing.
 4. Detect:
-   - Call `detector.inspect_image(img_bgr, params)`.
+   - Build runtime detector (`detector.create_runtime_detector(params)` if needed).
+   - Run detect (`detector.run_detector(...)`).
    - Display returned overlay image.
-   - Save params to `config.yaml` only if params were changed.
+   - Save params to `config/wego_tray/=@WORKING_+.yaml` only if params were changed.
 
 ## Coordinates and Clamping
 
@@ -75,9 +77,9 @@ detection implementation lives in `VisionRuntime/detect/weigao_tray.py`.
 
 ## Error Handling
 
-- Exceptions are printed to terminal (`traceback.print_exc()`).
-- UI remains usable; no modal error popup layer.
-- On detect exception, canvas redraw is forced to keep view consistent.
+- Runtime exceptions are not suppressed in app/controller callbacks.
+- Invalid operations fail fast and surface traceback in terminal.
+- No modal error popup layer.
 
 ## Non-goals
 

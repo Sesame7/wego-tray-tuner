@@ -39,31 +39,10 @@ def create_detector(
         package=__package__ or "detect",
         unknown_label="detector impl",
     )
-    kwargs: Dict[str, object] = {"input_pixel_format": input_pixel_format}
+    kwargs: dict[str, object] = {"input_pixel_format": input_pixel_format}
     if _factory_accepts_kwarg(factory, "preview_max_edge"):
         kwargs["preview_max_edge"] = int(preview_max_edge)
     return factory(params or {}, generate_overlay, **kwargs)
-
-
-def create_detector_from_loaded_config(
-    cfg,
-    *,
-    input_pixel_format: str | None = None,
-) -> Detector:
-    preview_enabled = bool(cfg.detect.preview_enabled)
-    preview_max_edge = int(cfg.detect.preview_max_edge)
-    pixel_format = (
-        input_pixel_format
-        if input_pixel_format is not None
-        else str(cfg.camera.capture_output_format)
-    )
-    return create_detector(
-        cfg.detect.impl,
-        cfg.detect_params or {},
-        generate_overlay=preview_enabled,
-        input_pixel_format=pixel_format,
-        preview_max_edge=preview_max_edge,
-    )
 
 
 def _factory_accepts_kwarg(factory: Callable[..., Detector], name: str) -> bool:
@@ -81,5 +60,4 @@ __all__ = [
     "Detector",
     "register_detector",
     "create_detector",
-    "create_detector_from_loaded_config",
 ]

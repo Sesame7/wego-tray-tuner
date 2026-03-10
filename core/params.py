@@ -7,11 +7,6 @@ from typing import Any, Dict
 import yaml
 
 
-DEFAULT_TEMPLATE_PATH = (
-    Path(__file__).resolve().parents[1] / "config" / "detect_weigao_tray.yaml"
-)
-
-
 class _CompactDumper(yaml.SafeDumper):
     pass
 
@@ -209,10 +204,8 @@ def _validate_runtime_params(params: Dict[str, Any]) -> None:
         _require_bool(debug_overlay.get(key), f"debug_overlay.{key}")
 
 
-def load_effective_params(
-    path: str, defaults_path: str | None = None
-) -> Dict[str, Any]:
-    template_path = Path(defaults_path) if defaults_path else DEFAULT_TEMPLATE_PATH
+def load_effective_params(path: str, defaults_path: str) -> Dict[str, Any]:
+    template_path = Path(defaults_path)
     if not template_path.exists():
         raise FileNotFoundError(f"Defaults config not found: {template_path}")
     defaults = _read_yaml_dict_strict(template_path)

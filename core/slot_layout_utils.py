@@ -3,66 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Tuple
 
 
-DEFAULT_SLOTS_PER_ROW = [17, 17, 17]
-DEFAULT_SLOT_ROI_WIDTH = 150
-DEFAULT_SLOT_ROI_HEIGHT = 200
-
-
 def _clamp(v: float, lo: float, hi: float) -> float:
     return lo if v < lo else hi if v > hi else v
-
-
-def _as_int(v: Any, default: int) -> int:
-    try:
-        return int(float(v))
-    except Exception:
-        return int(default)
-
-
-def _anchor_xy(anchor: Any) -> Tuple[int, int]:
-    if isinstance(anchor, dict):
-        return int(anchor.get("x", 0)), int(anchor.get("y", 0))
-    if isinstance(anchor, (list, tuple)) and len(anchor) >= 2:
-        return int(anchor[0]), int(anchor[1])
-    return 0, 0
-
-
-def normalize_slot_layout(params: Dict[str, Any]) -> Dict[str, Any]:
-    slot_layout = params.get("slot_layout")
-    if not isinstance(slot_layout, dict):
-        slot_layout = {}
-        params["slot_layout"] = slot_layout
-
-    slots_per_row_raw = slot_layout.get("slots_per_row")
-    if not isinstance(slots_per_row_raw, list) or len(slots_per_row_raw) <= 0:
-        slots_per_row_raw = list(DEFAULT_SLOTS_PER_ROW)
-    slots_per_row = [max(1, _as_int(v, 17)) for v in slots_per_row_raw]
-    slot_layout["slots_per_row"] = slots_per_row
-    rows = len(slots_per_row)
-
-    slot_roi = slot_layout.get("slot_roi")
-    if not isinstance(slot_roi, dict):
-        slot_roi = {}
-        slot_layout["slot_roi"] = slot_roi
-    slot_roi["width_px"] = max(
-        1, _as_int(slot_roi.get("width_px"), DEFAULT_SLOT_ROI_WIDTH)
-    )
-    slot_roi["height_px"] = max(
-        1, _as_int(slot_roi.get("height_px"), DEFAULT_SLOT_ROI_HEIGHT)
-    )
-
-    def _normalize_anchors(raw: Any) -> List[Dict[str, int]]:
-        src = raw if isinstance(raw, list) else []
-        out: List[Dict[str, int]] = []
-        for i in range(rows):
-            item = src[i] if i < len(src) else {}
-            x, y = _anchor_xy(item)
-            out.append({"x": int(x), "y": int(y)})
-        return out
-
-    slot_layout["left_anchors"] = _normalize_anchors(slot_layout.get("left_anchors"))
-    slot_layout["right_anchors"] = _normalize_anchors(slot_layout.get("right_anchors"))
-    return slot_layout
 
 
 def clamp_slot_layout_to_image(

@@ -216,4 +216,4 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Project data
-data/images/
+config/wego_tray/=@WORKING_+.yaml

@@ -1,6 +1,6 @@
 # Detection Reference and Compatibility
 
-This document defines how weigao-tray-tuner references detector behavior without
+This document defines how wego-tray-tuner references detector behavior without
 becoming a second source of truth.
 
 ## Canonical Detector Source
@@ -9,23 +9,24 @@ The detector behavior used by this app is copied from the main project:
 
 - Main project path: `<VISION_RUNTIME_ROOT>`
 - Canonical files:
-  - `VisionRuntime/detect/weigao_tray.py`
-  - `VisionRuntime/config/detect_weigao_tray.yaml`
+  - `VisionRuntime/detect/wego_tray.py`
+  - `VisionRuntime/config/wego_tray/*.yaml`
 
 In this repo, the runtime copies are:
 
-- `detect/weigao_tray.py`
-- `config/detect_weigao_tray.yaml`
+- `detect/wego_tray.py`
+- `config/wego_tray/*.yaml`
 
 If this document differs from copied code, copied code is authoritative.
 
-## weigao-tray-tuner Detection Adapter
+## wego-tray-tuner Detection Adapter
 
-weigao-tray-tuner does not implement detector stages directly. The call chain is:
+wego-tray-tuner does not implement detector stages directly. The call chain is:
 
-1. `app/controller.py` calls `detector.inspect_image(img_bgr, params)`.
-2. `core/detector.py` instantiates `WeigaoTrayDetector`.
-3. `detect/weigao_tray.py` runs the actual stage logic and returns overlay.
+1. `app/controller.py` calls `detector.create_runtime_detector(params)` (dirty or first run).
+2. `core/detector.py` instantiates `WegoTrayDetector`.
+3. `core/detector.py` forwards to `detector_instance.detect(img_bgr)`.
+4. `detect/wego_tray.py` runs the actual stage logic and returns overlay.
 
 ## Stage Contract (Current)
 
@@ -64,5 +65,4 @@ After sync from VisionRuntime, verify these before release:
 ## Deliberate Non-goal
 
 This file is not a full algorithm specification. Full algorithm detail should be
-read from `detect/weigao_tray.py` in the synced detector copy.
-
+read from `detect/wego_tray.py` in the synced detector copy.

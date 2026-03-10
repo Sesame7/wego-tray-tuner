@@ -1,9 +1,9 @@
 # Sync Contract with VisionRuntime
 
-This document defines how weigao-tray-tuner stays aligned with the main project:
+This document defines how wego-tray-tuner stays aligned with the main project:
 
 - Main project: `<VISIONRUNTIME_ROOT>`
-- Tuning project: `<WEIGAO_TRAY_TUNER_ROOT>`
+- Tuning project: `<WEGO_TRAY_TUNER_ROOT>`
 
 ## Source of Truth
 
@@ -12,22 +12,28 @@ of truth.
 
 ## Files to Sync
 
-Manually copy from VisionRuntime to weigao-tray-tuner:
+Manually copy from VisionRuntime to wego-tray-tuner:
 
-- `config/detect_weigao_tray.yaml` -> `config/detect_weigao_tray.yaml`
+- `config/wego_tray/*.yaml` -> `config/wego_tray/*.yaml`
 - `detect/*` -> `detect/*`
 - `utils/image_codec.py` -> `utils/image_codec.py`
 - (optional) sample images -> `data/images/*`
 
-Do not sync weigao-tray-tuner UI/controller files back into VisionRuntime.
+Runtime selection rule:
+
+- The tuner ignores recipe files starting with `_`.
+- The tuner also excludes `=@WORKING_+.yaml` from default-recipe selection.
+- The first lexicographically sorted remaining `*.yaml`/`*.yml` is used as default.
+
+Do not sync wego-tray-tuner UI/controller files back into VisionRuntime.
 
 ## Expected Local Overrides
 
-weigao-tray-tuner may diverge from VisionRuntime in:
+wego-tray-tuner may diverge from VisionRuntime in:
 
 - `main.py`, `app/controller.py`, `ui/control_panel.py`, `ui/image_view.py`, `core/slot_layout_utils.py`, `core/params.py`, `core/detector.py`
 - docs in `docs/*`
-- local working config file `config.yaml`
+- local working config file `config/wego_tray/=@WORKING_+.yaml`
 
 These are tuning-shell concerns, not detector source-of-truth concerns.
 

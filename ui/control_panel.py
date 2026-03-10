@@ -19,7 +19,6 @@ PANEL_WIDTH = 380
 SECTION_LEFT_PAD = 6
 ROW_GAP_X = 4
 ENTRY_BORDER_OK = "#b8b8b8"
-ENTRY_BORDER_ERR = "#d32f2f"
 NON_COLLAPSIBLE_SECTIONS = {"Slot Layout"}
 
 
@@ -132,31 +131,17 @@ class ControlPanel:
             )
             entry.grid(sticky="e", row=row, column=1)
 
-            def set_entry_valid(valid: bool) -> None:
-                border = ENTRY_BORDER_OK if valid else ENTRY_BORDER_ERR
-                fg = "#000000" if valid else "#b71c1c"
-                entry.configure(
-                    highlightbackground=border,
-                    highlightcolor=border,
-                    fg=fg,
-                )
-
             def commit(*_) -> None:
                 text = var.get().strip()
                 if text == last_value["text"]:
-                    set_entry_valid(True)
                     return
-                try:
-                    should_rebuild = on_change(text)
-                    new_text = get_display()
-                    last_value["text"] = new_text
-                    var.set(new_text)
-                    set_entry_valid(True)
-                    self._on_params_change()
-                    if should_rebuild:
-                        self._rebuild_panel()
-                except Exception:
-                    set_entry_valid(False)
+                should_rebuild = on_change(text)
+                new_text = get_display()
+                last_value["text"] = new_text
+                var.set(new_text)
+                self._on_params_change()
+                if should_rebuild:
+                    self._rebuild_panel()
 
             entry.bind("<Return>", commit)
             entry.bind("<KP_Enter>", commit)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,33 +19,57 @@ from app.image_session import ImageSession
 from ui.control_panel import ControlPanel
 from ui.image_view import ImageView
 
-
-def _source_base_dir() -> Path:
-    return Path(__file__).resolve().parents[1]
+WORK_CONFIG_NAME = "=@WORKING_+.yaml"
 
 
 def _runtime_base_dir() -> Path:
-    # PyInstaller: use the executable directory for user-editable files.
+    # Frozen build: use executable directory. Source run: use project root.
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
-    return _source_base_dir()
+    return Path(__file__).resolve().parents[1]
+
+
+def _sorted_recipe_files(recipe_dir: Path) -> list[Path]:
+    if not recipe_dir.exists():
+        return []
+    recipes = [
+        p
+        for p in recipe_dir.iterdir()
+        if p.is_file()
+        and p.suffix.lower() in {".yaml", ".yml"}
+        and not p.name.startswith("_")
+        and p.name.lower() != WORK_CONFIG_NAME.lower()
+    ]
+    recipes.sort(key=lambda p: p.name.lower())
+    return recipes
+
+
+def _resolve_default_recipe_path(base_dir: Path) -> Path:
+    recipe_dir = base_dir / "config" / "wego_tray"
+    recipes = _sorted_recipe_files(recipe_dir)
+    if recipes:
+        return recipes[0]
+    raise FileNotFoundError(
+        "No recipe config found under "
+        f"'{recipe_dir}'. Add at least one .yaml/.yml file not starting with '_', "
+        f"excluding '{WORK_CONFIG_NAME}'."
+    )
 
 
 BASE_DIR = _runtime_base_dir()
-SYNC_CONFIG_NAME = "detect_weigao_tray.yaml"
-SYNC_CONFIG_PATH = BASE_DIR / SYNC_CONFIG_NAME
-if not SYNC_CONFIG_PATH.exists():
-    for candidate in (BASE_DIR / "config" / SYNC_CONFIG_NAME,):
-        if candidate.exists():
-            SYNC_CONFIG_PATH = candidate
-            break
-WORK_CONFIG_PATH = BASE_DIR / "config.yaml"
+RECIPE_DIR = BASE_DIR / "config" / "wego_tray"
+SYNC_CONFIG_PATH = _resolve_default_recipe_path(BASE_DIR)
+WORK_CONFIG_PATH = RECIPE_DIR / WORK_CONFIG_NAME
 DATA_DIR = BASE_DIR / "data"
 SAMPLES_DIR = str(DATA_DIR / "images")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
 DBG_COLOR = (0, 0, 200)  # RGB
 GUIDANCE_ADJUST = "Adjust anchors or params, then click Detect (Ctrl+R)."
 GUIDANCE_REVIEW = "Review the overlay, adjust if needed, then Detect again."
+
+
+def _resolve_load_config_path() -> Path:
+    return WORK_CONFIG_PATH if WORK_CONFIG_PATH.exists() else SYNC_CONFIG_PATH
 
 
 class DisplayState:
@@ -152,10 +175,8 @@ def bind_app_shortcuts(
 class App:
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("Weigao Tray Tuner")
-        self.config_load_path = (
-            WORK_CONFIG_PATH if WORK_CONFIG_PATH.exists() else SYNC_CONFIG_PATH
-        )
+        self.root.title("Wego Tray Tuner")
+        self.config_load_path = _resolve_load_config_path()
         self.config_save_path = WORK_CONFIG_PATH
         self.tuning = TuningState(
             load_path=self.config_load_path,
@@ -199,11 +220,6 @@ class App:
     @staticmethod
     def _clamp(v: int, lo: int, hi: int) -> int:
         return lo if v < lo else hi if v > hi else v
-
-    def _handle_error(self, *, redraw: bool = False) -> None:
-        traceback.print_exc()
-        if redraw:
-            self.view.redraw()
 
     def _set_adjust_guidance(self) -> None:
         self.panel.set_guidance(GUIDANCE_ADJUST)
@@ -255,21 +271,14 @@ class App:
         self._refresh_editor_view(show_source_image=True, update_nav=update_nav)
 
     def _go_to_image(self, index: int) -> None:
-        try:
-            moved = self._go_to_index(index)
-            if not moved:
-                return
-            self._after_image_loaded(update_nav=True)
-        except Exception:
-            self._update_nav_buttons()
-            self._handle_error()
+        moved = self._go_to_index(index)
+        if not moved:
+            return
+        self._after_image_loaded(update_nav=True)
 
     def _load_selected_image(self, path: Path) -> None:
-        try:
-            self._load_image_path(path, rebuild_list=True)
-            self._after_image_loaded(update_nav=True)
-        except Exception:
-            self._handle_error()
+        self._load_image_path(path, rebuild_list=True)
+        self._after_image_loaded(update_nav=True)
 
     def prev_image(self) -> None:
         self._go_to_image(self.images.index - 1)
@@ -376,15 +385,12 @@ class App:
     def run(self) -> None:
         if self.display.source_bgr is None:
             return
-        try:
-            overlay_bgr = self._run_detection()
-            self._set_display_image(overlay_bgr)
-            self._refresh_anchors()
-            self.panel.set_guidance(GUIDANCE_REVIEW)
-            self.tuning.save_if_dirty()
-            self._refresh_grid_overlays()
-        except Exception:
-            self._handle_error(redraw=True)
+        overlay_bgr = self._run_detection()
+        self._set_display_image(overlay_bgr)
+        self._refresh_anchors()
+        self.panel.set_guidance(GUIDANCE_REVIEW)
+        self.tuning.save_if_dirty()
+        self._refresh_grid_overlays()
 
     def _open_image_dialog(self, *, initial_dir: str) -> Path | None:
         path = filedialog.askopenfilename(
@@ -412,17 +418,11 @@ class App:
     def _go_to_index(self, index: int) -> bool:
         if not self.images.can_index(index):
             return False
-        prev_index = self.images.index
         self.images.set_index(index)
         current_path = self.images.current_path
         if current_path is None:
-            self.images.restore_index(prev_index)
             return False
-        try:
-            self._load_image_path(current_path, rebuild_list=False)
-        except Exception:
-            self.images.restore_index(prev_index)
-            raise
+        self._load_image_path(current_path, rebuild_list=False)
         return True
 
     def _run_detection(self) -> np.ndarray:
