@@ -57,17 +57,8 @@ jobs:
 
       - name: Compile (syntax sanity)
         run: |
-          python -m py_compile \
-            main.py \
-            app/__init__.py \
-            app/controller.py \
-            ui/control_panel.py \
-            ui/image_view.py \
-            core/detector.py \
-            core/params.py \
-            core/grid_utils.py \
-            detect/base.py \
-            detect/weigao_tray.py
+          python -m py_compile main.py
+          python -m compileall -q app core detect ui utils
 
       - name: Freeze deps (for debugging)
         if: always()
@@ -79,4 +70,3 @@ jobs:
         with:
           name: pip-freeze-deps-smoke
           path: pip-freeze.txt
-
